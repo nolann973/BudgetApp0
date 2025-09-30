@@ -2,11 +2,64 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
+
   <title>BudgetApp</title>
+
+  <!-- Couleur du thème pour mobile -->
+  <meta name="theme-color" content="#00FF88" />
+
+  <!-- Lien vers le manifeste PWA -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Icône pour les appareils Apple -->
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+  <!-- Tailwind (si tu l’utilises) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Script React -->
   <script type="module" src="/src/main.jsx"></script>
+
+  <!-- Styles de base pour le responsive si besoin -->
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #111827; /* bg-gray-900 */
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* S'assure que l'app occupe toute la hauteur sur mobile */
+    #root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Ajustements responsive spécifiques */
+    @media (max-width: 768px) {
+      h1, h2, h3 {
+        font-size: 1.2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1, h2, h3 {
+        font-size: 1rem;
+      }
+    }
+  </style>
 </head>
+
 <body class="bg-gray-900 text-white">
+  <!-- Point d’ancrage de React -->
   <div id="root"></div>
 </body>
 </html>
