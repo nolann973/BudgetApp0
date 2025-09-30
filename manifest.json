@@ -1,0 +1,243 @@
+import React, { useState, useEffect } from "react";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Plus, Edit2, Trash2 } from "lucide-react";
+
+{
+  "short_name": "BudgetApp",
+  "name": "BudgetApp PWA",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00FF88"
+}
+
+const categories = [
+  { name: "Alimentation", color: "#FF6B6B" },
+  { name: "Transport", color: "#4ECDC4" },
+  { name: "Loisirs", color: "#95E1D3" },
+  { name: "Santé", color: "#F38181" },
+  { name: "Shopping", color: "#AA96DA" },
+  { name: "Logement", color: "#FCBAD3" },
+  { name: "Autres", color: "#A8E6CF" }
+];
+
+const SmallExpensesApp = () => {
+  const [user, setUser] = useState(null);
+  const [currentView, setCurrentView] = useState("login");
+  const [budget, setBudget] = useState(null);
+  const [expenses, setExpenses] = useState([]);
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [newBudget, setNewBudget] = useState("");
+  const [newExpense, setNewExpense] = useState({ amount: "", category: "Alimentation", note: "" });
+  const [editingExpense, setEditingExpense] = useState(null);
+
+  useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem("smallUser") || "null");
+    const savedBudget = JSON.parse(localStorage.getItem("smallBudget") || "null");
+    const savedExpenses = JSON.parse(localStorage.getItem("smallExpenses") || "[]");
+
+    if (savedUser) {
+      setUser(savedUser);
+      setName(savedUser.name);
+      setSurname(savedUser.surname);
+      setBudget(savedBudget);
+      setExpenses(savedExpenses);
+      setCurrentView("dashboard");
+    }
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    const email = e.target.email.value;
+    const newUser = { email, name: "", surname: "" };
+    setUser(newUser);
+    localStorage.setItem("smallUser", JSON.stringify(newUser));
+    setCurrentView("profil");
+  };
+
+  const handleProfil = (e) => {
+    e.preventDefault();
+    const updatedUser = { ...user, name, surname };
+    setUser(updatedUser);
+    localStorage.setItem("smallUser", JSON.stringify(updatedUser));
+    setCurrentView("dashboard");
+  };
+
+  const handleSetBudget = (e) => {
+    e.preventDefault();
+    const newB = parseFloat(newBudget);
+    setBudget(newB);
+    localStorage.setItem("smallBudget", JSON.stringify(newB));
+    setNewBudget("");
+  };
+
+  const handleAddExpense = (e) => {
+    e.preventDefault();
+    if (editingExpense) {
+      const updated = expenses.map(exp => exp.id === editingExpense.id ? { ...editingExpense, ...newExpense, amount: parseFloat(newExpense.amount) } : exp);
+      setExpenses(updated);
+      localStorage.setItem("smallExpenses", JSON.stringify(updated));
+      setEditingExpense(null);
+    } else {
+      const expense = { id: Date.now(), ...newExpense, amount: parseFloat(newExpense.amount) };
+      const updated = [...expenses, expense];
+      setExpenses(updated);
+      localStorage.setItem("smallExpenses", JSON.stringify(updated));
+    }
+    setNewExpense({ amount: "", category: "Alimentation", note: "" });
+  };
+
+  const handleEditExpense = (exp) => {
+    setEditingExpense(exp);
+    setNewExpense({ amount: exp.amount.toString(), category: exp.category, note: exp.note });
+  };
+
+  const handleDeleteExpense = (id) => {
+    const updated = expenses.filter(exp => exp.id !== id);
+    setExpenses(updated);
+    localStorage.setItem("smallExpenses", JSON.stringify(updated));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setBudget(null);
+    setExpenses([]);
+    localStorage.clear();
+    setCurrentView("login");
+  };
+
+  const getTotalExpenses = () => expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+  const expensesByCategory = () => {
+    const byCat = {};
+    expenses.forEach(exp => {
+      byCat[exp.category] = (byCat[exp.category] || 0) + exp.amount;
+    });
+    return Object.entries(byCat).map(([name, value]) => {
+      const cat = categories.find(c => c.name === name);
+      return { name, value, color: cat?.color || "#999" };
+    });
+  };
+
+  // --- VUES ---
+
+  if (currentView === "login")
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4">
+        <form onSubmit={handleLogin} className="bg-gray-800 p-8 rounded-3xl w-full max-w-md border border-gray-700 space-y-6">
+          <h1 className="text-2xl font-bold text-white text-center">SmallExpenses</h1>
+          <input type="email" name="email" placeholder="Email" required className="w-full p-3 rounded-xl bg-gray-700 text-white" />
+          <button type="submit" className="w-full py-3 bg-green-500 rounded-xl text-white font-bold hover:bg-green-600 transition">
+            Suivant
+          </button>
+        </form>
+      </div>
+    );
+
+  if (currentView === "profil")
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <form onSubmit={handleProfil} className="bg-gray-800 p-8 rounded-3xl w-full max-w-md border border-gray-700 space-y-6">
+          <h1 className="text-2xl font-bold text-white text-center">Personnalisez votre profil</h1>
+          <input type="text" placeholder="Prénom" value={name} onChange={(e) => setName(e.target.value)} required className="w-full p-3 rounded-xl bg-gray-700 text-white" />
+          <input type="text" placeholder="Nom" value={surname} onChange={(e) => setSurname(e.target.value)} required className="w-full p-3 rounded-xl bg-gray-700 text-white" />
+          <button type="submit" className="w-full py-3 bg-green-500 rounded-xl text-white font-bold hover:bg-green-600 transition">
+            Suivant
+          </button>
+        </form>
+      </div>
+    );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 text-white">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Bonjour, {user.name} {user.surname}</h1>
+          <button onClick={handleLogout} className="px-4 py-2 bg-red-500 rounded-xl hover:bg-red-600 transition">Déconnexion</button>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-2">Budget mensuel</h2>
+          {!budget ? (
+            <form onSubmit={handleSetBudget} className="flex space-x-2">
+              <input type="number" placeholder="Montant" value={newBudget} onChange={(e) => setNewBudget(e.target.value)} required className="p-3 rounded-xl bg-gray-700 text-white flex-1" />
+              <button type="submit" className="px-4 py-3 bg-green-500 rounded-xl hover:bg-green-600 transition">Valider</button>
+            </form>
+          ) : (
+            <p className="text-green-400 text-2xl">{budget.toFixed(2)} €</p>
+          )}
+        </div>
+
+        {/* Dépenses */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-2">Ajouter / Modifier une dépense</h2>
+          <form onSubmit={handleAddExpense} className="flex space-x-2 mb-4">
+            <input type="number" placeholder="Montant" value={newExpense.amount} onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})} required className="p-3 rounded-xl bg-gray-700 text-white flex-1" />
+            <select value={newExpense.category} onChange={(e) => setNewExpense({...newExpense, category: e.target.value})} className="p-3 rounded-xl bg-gray-700 text-white">
+              {categories.map(cat => (<option key={cat.name} value={cat.name}>{cat.name}</option>))}
+            </select>
+            <input type="text" placeholder="Note" value={newExpense.note} onChange={(e) => setNewExpense({...newExpense, note: e.target.value})} className="p-3 rounded-xl bg-gray-700 text-white flex-1" />
+            <button type="submit" className="px-4 py-3 bg-green-500 rounded-xl hover:bg-green-600 transition">{editingExpense ? "Modifier" : "Ajouter"}</button>
+          </form>
+
+          {expenses.length > 0 ? (
+            expenses.map(exp => (
+              <div key={exp.id} className="flex justify-between items-center bg-gray-800 p-3 rounded-xl mb-2">
+                <div>{exp.category} - {exp.amount.toFixed(2)}€ ({exp.note})</div>
+                <div className="flex space-x-2">
+                  <button onClick={() => handleEditExpense(exp)} className="p-1 bg-gray-700 rounded"><Edit2 className="w-4 h-4 text-green-400" /></button>
+                  <button onClick={() => handleDeleteExpense(exp.id)} className="p-1 bg-gray-700 rounded"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                </div>
+              </div>
+            ))
+          ) : <p>Aucune dépense</p>}
+        </div>
+
+        {/* Graphiques */}
+        {expenses.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-800 p-4 rounded-xl">
+              <h2 className="font-bold mb-2">Répartition par catégorie</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie data={expensesByCategory()} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                    {expensesByCategory().map((entry, i) => (<Cell key={i} fill={entry.color} />))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="bg-gray-800 p-4 rounded-xl">
+              <h2 className="font-bold mb-2">Dépenses totales</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={expenses}>
+                  <XAxis dataKey="category" stroke="#fff" />
+                  <YAxis stroke="#fff" />
+                  <Tooltip />
+                  <Bar dataKey="amount" fill="#4ade80" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        <p className="mt-4 text-green-400 font-bold">Budget restant : {(budget - getTotalExpenses()).toFixed(2)} €</p>
+      </div>
+    </div>
+  );
+};
+
+export default SmallExpensesApp;
