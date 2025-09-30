@@ -4,34 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BudgetApp</title>
-
-  <!-- Manifest PWA -->
   <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/icon-192.png" />
   <meta name="theme-color" content="#00FF88" />
-
-  <!-- Icons pour mobile -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-  <link rel="apple-touch-icon" href="/icon-512.png">
-
-  <!-- Styles éventuels -->
-  <link rel="stylesheet" href="/style.css">
-  
-  <!-- Script React -->
   <script type="module" src="/src/main.jsx"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center">
-  <div id="root" class="w-full max-w-md px-4"></div>
-
-  <!-- Service Worker pour PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW enregistré:', reg.scope))
-          .catch(err => console.log('SW erreur:', err));
-      });
-    }
-  </script>
+<body class="bg-gray-900 text-white">
+  <div id="root"></div>
 </body>
 </html>
-

@@ -1,16 +1,6 @@
-import React, { useState } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer
-} from "recharts";
-import { Plus, Edit2, Trash2, Moon, Sun } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { Trash2, LogOut } from "lucide-react";
 
 const categories = [
   { name: "Alimentation", color: "#FF6B6B" },
@@ -23,124 +13,127 @@ const categories = [
 ];
 
 const SmallExpensesApp = () => {
+  const [currentView, setCurrentView] = useState('login');
+  const [user, setUser] = useState(null);
   const [expenses, setExpenses] = useState([]);
-  const [newExpense, setNewExpense] = useState({ category: "", amount: "" });
-  const [darkMode, setDarkMode] = useState(true);
+  const [profile, setProfile] = useState({ prenom: '', pseudo: '' });
 
-  const handleAdd = () => {
-    if (newExpense.category && newExpense.amount) {
-      setExpenses([
-        ...expenses,
-        { ...newExpense, id: Date.now(), amount: Number(newExpense.amount) }
-      ]);
-      setNewExpense({ category: "", amount: "" });
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if(savedUser){
+      const userData = JSON.parse(savedUser);
+      setUser(userData);
+      setProfile(userData);
+      setCurrentView('dashboard');
     }
+  }, []);
+
+  const handleLogin = e => {
+    e.preventDefault();
+    const prenom = e.target.prenom.value;
+    const pseudo = e.target.pseudo.value;
+    const userData = { prenom, pseudo };
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+    setProfile(userData);
+    setCurrentView('dashboard');
   };
 
-  const handleDelete = (id) => {
-    setExpenses(expenses.filter(e => e.id !== id));
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    setCurrentView('login');
   };
 
-  const handleEdit = (id) => {
-    const exp = expenses.find(e => e.id === id);
-    if (exp) setNewExpense({ category: exp.category, amount: exp.amount });
-    setExpenses(expenses.filter(e => e.id !== id));
+  const handleProfileUpdate = e => {
+    e.preventDefault();
+    const prenom = e.target.prenom.value;
+    const pseudo = e.target.pseudo.value;
+    const updated = { prenom, pseudo };
+    localStorage.setItem("user", JSON.stringify(updated));
+    setProfile(updated);
+    setCurrentView('dashboard');
   };
 
-  return (
-    <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"} min-h-screen p-4 flex flex-col items-center`}>
-      {/* Header */}
-      <div className="flex w-full max-w-xl justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-center">BudgetApp</h1>
-        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full hover:bg-gray-700/30 transition">
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-      </div>
+  const handleAddExpense = (category, amount) => {
+    setExpenses(prev => [...prev, { category, amount }]);
+  };
 
-      {/* Formulaire */}
-      <div className="w-full max-w-xl flex flex-col gap-3 mb-6 sm:flex-row sm:gap-2">
-        <select
-          className="p-3 rounded-xl bg-gray-700 text-white flex-1"
-          value={newExpense.category}
-          onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-        >
-          <option value="">Choisir catégorie</option>
-          {categories.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-        </select>
-        <input
-          type="number"
-          placeholder="Montant"
-          className="p-3 rounded-xl bg-gray-700 text-white flex-1"
-          value={newExpense.amount}
-          onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-        />
-        <button
-          onClick={handleAdd}
-          className="p-3 bg-green-500 rounded-xl font-bold hover:bg-green-600 transition flex items-center justify-center"
-        >
-          <Plus size={20} className="mr-2"/> Ajouter
-        </button>
-      </div>
+  const pieData = categories.map(cat => {
+    const total = expenses.filter(e => e.category === cat.name).reduce((a,b)=>a+Number(b.amount),0);
+    return { name: cat.name, value: total, color: cat.color };
+  });
 
-      {/* Graphiques */}
-      <div className="w-full max-w-xl flex flex-col gap-6 mb-6 sm:flex-row sm:flex-wrap">
-        {/* PieChart */}
-        <div className="bg-gray-800 p-4 rounded-xl flex-1 min-w-[250px]">
-          <h2 className="text-lg font-semibold mb-2">Répartition</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={expenses}
-                dataKey="amount"
-                nameKey="category"
-                outerRadius={80}
-                fill="#8884d8"
-              >
-                {expenses.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={categories.find(c => c.name === entry.category)?.color || "#ccc"}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+  if(currentView === 'login') return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <form onSubmit={handleLogin} className="bg-gray-800 p-8 rounded-3xl w-full max-w-md space-y-6 border border-gray-700">
+        <h1 className="text-2xl font-bold text-white text-center">SmallExpenses</h1>
+        <input name="prenom" placeholder="Prénom" required className="w-full p-3 rounded-xl bg-gray-700 text-white"/>
+        <input name="pseudo" placeholder="Pseudo" required className="w-full p-3 rounded-xl bg-gray-700 text-white"/>
+        <button type="submit" className="w-full py-3 bg-green-500 rounded-xl text-white font-bold hover:bg-green-600 transition">Se connecter</button>
+      </form>
+    </div>
+  );
+
+  if(currentView === 'profile') return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900">
+      <form onSubmit={handleProfileUpdate} className="bg-gray-800 p-8 rounded-3xl w-full max-w-md space-y-6 border border-gray-700">
+        <h1 className="text-2xl font-bold text-white text-center">Profil</h1>
+        <input name="prenom" defaultValue={profile.prenom} required className="w-full p-3 rounded-xl bg-gray-700 text-white"/>
+        <input name="pseudo" defaultValue={profile.pseudo} required className="w-full p-3 rounded-xl bg-gray-700 text-white"/>
+        <button type="submit" className="w-full py-3 bg-green-500 rounded-xl text-white font-bold hover:bg-green-600 transition">Mettre à jour</button>
+        <button type="button" onClick={() => setCurrentView('dashboard')} className="w-full py-3 bg-red-500 rounded-xl text-white font-bold hover:bg-red-600 transition">Annuler</button>
+      </form>
+    </div>
+  );
+
+  if(currentView === 'dashboard') return (
+    <div className="min-h-screen p-4 bg-gray-900">
+      <header className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+        <h1 className="text-2xl font-bold text-white">Bienvenue, {profile.prenom}</h1>
+        <div className="flex gap-2">
+          <button onClick={()=>setCurrentView('profile')} className="py-2 px-4 bg-blue-500 rounded-xl font-bold hover:bg-blue-600 transition">Profil</button>
+          <button onClick={handleLogout} className="py-2 px-4 bg-red-500 rounded-xl font-bold hover:bg-red-600 transition flex items-center gap-2">
+            <LogOut size={16}/> Déconnexion
+          </button>
         </div>
+      </header>
 
-        {/* BarChart */}
-        <div className="bg-gray-800 p-4 rounded-xl flex-1 min-w-[250px]">
-          <h2 className="text-lg font-semibold mb-2">Historique</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={expenses}>
-              <XAxis dataKey="category" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="amount" fill="#00FF88" />
-            </BarChart>
-          </ResponsiveContainer>
+      <section className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-2">Graphiques des dépenses</h2>
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
+            <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80}>
+              {pieData.map((entry,index)=> <Cell key={index} fill={entry.color}/>)}
+            </Pie>
+            <Tooltip/>
+          </PieChart>
+        </ResponsiveContainer>
+      </section>
+
+      <section className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-2">Ajouter une dépense</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {categories.map(cat => (
+            <button key={cat.name} onClick={()=> {
+              const amount = prompt(`Montant pour ${cat.name} ?`);
+              if(amount) handleAddExpense(cat.name, amount);
+            }} className="py-2 px-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition">{cat.name}</button>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Liste des dépenses */}
-      <div className="w-full max-w-xl bg-gray-800 rounded-xl p-4">
-        <h2 className="text-lg font-semibold mb-2">Dépenses</h2>
-        <ul className="flex flex-col gap-2">
-          {expenses.map(exp => (
-            <li key={exp.id} className="flex justify-between items-center p-2 bg-gray-700 rounded-xl">
-              <span>{exp.category} - {exp.amount}€</span>
-              <div className="flex gap-2">
-                <button onClick={() => handleEdit(exp.id)} className="hover:text-yellow-400">
-                  <Edit2 size={16} />
-                </button>
-                <button onClick={() => handleDelete(exp.id)} className="hover:text-red-500">
-                  <Trash2 size={16} />
-                </button>
-              </div>
+      <section>
+        <h2 className="text-xl font-bold text-white mb-2">Liste des dépenses</h2>
+        <ul className="space-y-2">
+          {expenses.map((e,i)=>(
+            <li key={i} className="flex justify-between bg-gray-700 p-2 rounded-xl">
+              <span>{e.category}: {e.amount} €</span>
+              <button onClick={()=>setExpenses(prev=>prev.filter((_,idx)=>idx!==i))} className="text-red-500 hover:text-red-400"><Trash2 size={16}/></button>
             </li>
           ))}
         </ul>
-      </div>
+      </section>
     </div>
   );
 };
