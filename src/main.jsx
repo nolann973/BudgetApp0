@@ -1,7 +1,7 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import BudgetApp from "./BudgetApp";
-import "./index.css";
+import BudgetApp from './BudgetApp'
 
-const root = createRoot(document.getElementById("root"));
-root.render(<BudgetApp />);
+function App() {
+  return <BudgetApp />
+}
+
+export default App
